@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<launch>
+  <!--Starting the serial communication with the Arduino-->
+  <node pkg="my_repository" type="Arduino.py" name="Arduino" output="screen" >
+    <param name="imuenable" value='False'/>
+    <param name="angular_correction" value="0.97"/>
+    <param name="linear_correction" value="0.9"/>
+  </node>
+  <!--node pkg="my_repository" type="imu" name="Imu" output="screen"/-->
+  <!--Launching the odometry broadcaster -->
+  <!--node pkg="my_repository" type="rodom_broadcaster" name="Odometry" output="screen"/>
+  <param name="max_output" value="75.0" type="double" />
+  <param name="min_output" value="-75.0" type="double" />
+  <node pkg="my_repository" type="rspeed_control" name="SpeedControl" output="screen"/-->
+  <!-- kinematics node-->
+  <!--node pkg="my_repository" type="rkinematics" name="kinematics"/-->
+  <!-- Multiplexer node for speed control-->
+  <node pkg="nodelet" type="nodelet" name="cmd_vel_mux" args="standalone yocs_cmd_vel_mux/CmdVelMuxNodelet">
+    <param name="yaml_cfg_file" value="$(find my_repository)/params/mux.yaml"/>
+    <remap from="cmd_vel_mux/input/teleop" to="teleop/cmd_vel"/>
+    <remap from="cmd_vel_mux/output" to="cmd_vel"/>
+  </node>
+  <!-- Range sensor-->
+  <!--node pkg="my_repository" type="ul_range" name="Ul_range" respawn="true" /-->
+</launch>

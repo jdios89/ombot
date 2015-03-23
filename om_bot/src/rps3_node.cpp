@@ -1,0 +1,117 @@
+#include "ros/ros.h"
+#include "sensor_msgs/Joy.h"
+#include "geometry_msgs/Twist.h"
+#include "std_msgs/String.h"
+#include <sstream>
+#include "turtlesim/TeleportAbsolute.h"
+#include "turtlesim/Pose.h"
+#include "math.h"
+double FL;
+double FR;
+double RR;
+double RL;
+double secs;
+//////RObot dimensions /////////
+double l1 = 16;   //cm
+double l2 = 16.75; //cm
+double wz;
+double radius_wheel = 5.5; //cm
+
+class TeleopTurtle
+{
+	public:
+		TeleopTurtle();
+		void parame(void);
+	private:
+		void joyCallback(const sensor_msgs::Joy::ConstPtr& joy);
+		void posecallback(const turtlesim::Pose::ConstPtr& ppose);
+		
+		ros::NodeHandle nh_;
+		int linear_, angular_, side_;
+		double l_scale_, a_scale_;
+		ros::Publisher vel_pub_;
+		ros::Publisher vel_cmd_;
+		ros::Subscriber joy_sub_;
+		ros::Subscriber turtlepose_;
+		ros::ServiceClient client_;
+
+};
+
+TeleopTurtle::TeleopTurtle():
+	  linear_(1),
+	  angular_(0),
+          side_(2){
+	  nh_.param("axis_linear", linear_, linear_);
+	  nh_.param("axis_angular", angular_, angular_);
+          nh_.param("axis_side", side_, side_);
+	  nh_.param("scale_angular", a_scale_, a_scale_);
+	  nh_.param("scale_linear", l_scale_, l_scale_);
+	  vel_pub_ = nh_.advertise<geometry_msgs::Twist>("turtle1/cmd_vel", 1);
+	  vel_cmd_ = nh_.advertise<geometry_msgs::Twist>("cmd_vel", 10);	
+	  joy_sub_ = nh_.subscribe<sensor_msgs::Joy>("joy", 1, &TeleopTurtle::joyCallback, this);
+	  turtlepose_ = nh_.subscribe<turtlesim::Pose>("turtle1/pose", 10, &TeleopTurtle::posecallback, this);
+	  client_ = nh_.serviceClient<turtlesim::TeleportAbsolute>("turtle1/teleport_absolute");
+}
+float vlinearx = 0;
+float vlineary = 0;
+float vangularz = 0;
+float x = 5.54,y = 5.54 ,theta = 3.14/2;
+void TeleopTurtle::posecallback(const turtlesim::Pose::ConstPtr& ppose)
+{
+	x = ppose->x;
+	y = ppose->y;
+	theta = ppose->theta;
+}
+
+void TeleopTurtle::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
+{
+	geometry_msgs::Twist vel;
+	
+	turtlesim::TeleportAbsolute srv;
+	
+	vel.linear.x = vlinearx = l_scale_*joy->axes[linear_];
+	vel.linear.y = vlineary = l_scale_*joy->axes[side_];
+	vel.angular.z = vangularz = a_scale_*joy->axes[angular_];
+	
+	srv.request.x = x + cos(theta)*(vlinearx/5) - sin(theta)*(-vlineary/5);
+	srv.request.y = y + sin(theta)*(vlinearx/5) + cos(theta)*(-vlineary/5);
+	srv.request.theta = theta + (vangularz/4);
+	
+
+
+	vel_cmd_.publish(vel);
+	client_.call(srv);
+	secs =ros::Time::now().toSec() + 1;
+		
+}
+
+void TeleopTurtle::parame()
+{
+        nh_.param("axis_linear", linear_, linear_);
+        nh_.param("axis_angular", angular_, angular_);
+        nh_.param("axis_side", side_, side_);
+        nh_.param("scale_angular", a_scale_, a_scale_);
+        nh_.param("scale_linear", l_scale_, l_scale_);
+}
+//std_msgs::String msg2;
+//char datum2[4];
+int main(int argc, char** argv)
+{
+	ros::init(argc, argv, "teleop_turtle");
+	  
+        //ros::Rate loop_rate(300);
+        TeleopTurtle teleop_turtle;  
+        while (true)
+	{
+          
+        
+	  
+          teleop_turtle.parame();
+	  ros::spinOnce();
+        //  loop_rate.sleep();
+        }
+	/*ros::Rate loop_rate(100);
+
+		ros::spinOnce();
+	}*/	
+}

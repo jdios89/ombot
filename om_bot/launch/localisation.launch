@@ -1,0 +1,12 @@
+<launch>
+  <master auto="start"/>
+
+  <!-- Run the map server -->
+    <!--node name="map_server" pkg="map_server" type="map_server" args="$(find my_repository)/maps/lab18dec.yaml"/-->
+  <node name="map_server" pkg="map_server" type="map_server" args="$(find my_repository)/maps/labo13.yaml"/>
+  <!-- Run AMCL -->
+  <include file="$(find my_repository)/launch/amcl_omni.launch" />
+
+ 
+</launch>
+

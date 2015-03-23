@@ -1,0 +1,38 @@
+digraph G {
+node [shape=box];
+"base_link" [label="base_link"];
+"FL_wheel" [label="FL_wheel"];
+"FR_wheel" [label="FR_wheel"];
+"RL_wheel" [label="RL_wheel"];
+"RR_wheel" [label="RR_wheel"];
+"shovel_link" [label="shovel_link"];
+"xtion_platform" [label="xtion_platform"];
+"xtion_link" [label="xtion_link"];
+"camera_depth_frame" [label="camera_depth_frame"];
+"camera_depth_optical_frame" [label="camera_depth_optical_frame"];
+"camera_rgb_frame" [label="camera_rgb_frame"];
+"camera_rgb_optical_frame" [label="camera_rgb_optical_frame"];
+node [shape=ellipse, color=blue, fontcolor=blue];
+"base_link" -> "FL" [label="xyz: 0.166545 0.15401 -0.0162 \nrpy: 0 -0 0"]
+"FL" -> "FL_wheel"
+"base_link" -> "FR" [label="xyz: 0.166545 -0.15401 -0.0162 \nrpy: 0 -0 0"]
+"FR" -> "FR_wheel"
+"base_link" -> "RL" [label="xyz: -0.166545 0.15401 -0.0162 \nrpy: 0 -0 0"]
+"RL" -> "RL_wheel"
+"base_link" -> "RR" [label="xyz: -0.166545 -0.15401 -0.0162 \nrpy: 0 -0 0"]
+"RR" -> "RR_wheel"
+"base_link" -> "Shovel" [label="xyz: 0.3 0 -0.04 \nrpy: 0 -0 0"]
+"Shovel" -> "shovel_link"
+"base_link" -> "base_xtion_platform_joint" [label="xyz: -0.2765 0.0292 0.268 \nrpy: 0 -0 0"]
+"base_xtion_platform_joint" -> "xtion_platform"
+"xtion_platform" -> "base_xtion_joint" [label="xyz: 0.0074381 0 0.01875 \nrpy: 0 -0 0"]
+"base_xtion_joint" -> "xtion_link"
+"xtion_link" -> "xtion_depth_joint" [label="xyz: 0 0.018 0 \nrpy: 0 -0 0"]
+"xtion_depth_joint" -> "camera_depth_frame"
+"camera_depth_frame" -> "xtion_depth_optical_joint" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"xtion_depth_optical_joint" -> "camera_depth_optical_frame"
+"xtion_link" -> "xtion_rgb_joint" [label="xyz: 0 -0.005 0 \nrpy: 0 -0 0"]
+"xtion_rgb_joint" -> "camera_rgb_frame"
+"camera_rgb_frame" -> "xtion_rgb_optical_joint" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"xtion_rgb_optical_joint" -> "camera_rgb_optical_frame"
+}

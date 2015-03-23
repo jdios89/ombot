@@ -1,0 +1,26 @@
+<launch>
+
+ <!-- Turtlesim Node-->
+  <node pkg="turtlesim" type="turtlesim_node" name="sim"/>
+
+
+ <!-- PS3 joy node -->
+  <node respawn="true" pkg="joy"
+        type="joy_node" name="PS3_joy" output="screen">
+    <param name="dev" type="string" value="/dev/input/js0" />
+    <param name="deadzone" value="0.12" />
+  </node>
+ <!-- control node -->
+		<!--node pkg="my_repository" type="rspeed_controlps3" name="Speedcontrol"/-->
+ <!-- kinematics node-->
+		<!--node pkg="my_repository" type="rkinematics" name="kinematics"/-->
+
+ <!-- Axes -->
+  <param name="axis_linear" value="1" type="int"/>
+  <param name="axis_angular" value="0" type="int"/>
+  <param name="scale_linear" value="0.6105" type="double"/>
+  <param name="scale_angular" value="1.7" type="double"/>
+ <!--angular max 1.864-->
+  <node pkg="my_repository" type="rps3_node" name="teleop"/>
+
+</launch>

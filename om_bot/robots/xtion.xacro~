@@ -1,0 +1,261 @@
+<?xml version="1.0"?>
+<robot name="xtion" xmlns:xacro="http://ros.org/wiki/xacro">
+  <property name="M_PI" value="3.14159" />
+
+  <xacro:macro name="xtion" params="parent x_loc y_loc z_loc rr rp ry">
+    <joint name="base_xtion_joint" type="fixed">
+      <origin xyz="0.0074381 0 0.01875" rpy="0 0 0" />
+      <parent link="xtion_platform" />
+      <child link="xtion_link" />
+    </joint>
+
+    <link name="xtion_link">
+      <inertial>
+        <mass value="0.01" />
+        <origin xyz="0 0 0" />
+        <inertia ixx="0.001" ixy="0.0" ixz="0.0"
+                 iyy="0.001" iyz="0.0" izz="0.001" />
+      </inertial>
+
+      <visual>
+        <origin xyz="0 0 0" rpy="${M_PI/2.0} 0 ${M_PI/2.0}" />
+        <geometry>
+          <mesh filename="package://my_repository/meshes/STL/AsusXtion.STL" />
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin xyz="-0.01 0.0 0.0" rpy="0 0 0" />
+        <geometry>
+          <box size="0.04 0.18 0.03"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <!-- platform for xtion -->
+
+    <joint name="base_xtion_platform_joint" type="fixed">
+      <origin xyz="${x_loc} ${y_loc} ${z_loc}" rpy="${rr} ${rp} ${ry}" />
+      <parent link="${parent}" />
+      <child link="xtion_platform" />
+    </joint>
+
+    <link name="xtion_platform">
+      <inertial>
+        <mass value="0.01" />
+        <origin xyz="0 0 0" />
+        <inertia ixx="0.001" ixy="0.0" ixz="0.0"
+                 iyy="0.001" iyz="0.0" izz="0.001" />
+      </inertial>
+
+      <visual>
+        <origin xyz="0 0 0 " rpy="${M_PI/2.0} 0 ${M_PI/2.0}" />
+        <geometry>
+        
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+        <geometry>
+          <box size="0.05 0.246 0.02"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <!-- left clip for xtion -->
+
+    <joint name="base_xtion_left_clip_joint" type="fixed">
+      <origin xyz="-0.017 -0.0745 0.00635"
+              rpy="0.0 0.0 0.0" />
+      <parent link="xtion_platform" />
+      <child link="xtion_left_clip" />
+    </joint>
+
+    <link name="xtion_left_clip">
+      <inertial>
+        <mass value="0.01" />
+        <origin xyz="0 0 0" />
+        <inertia ixx="0.001" ixy="0.0" ixz="0.0"
+                 iyy="0.001" iyz="0.0" izz="0.001" />
+      </inertial>
+
+      <visual>
+        <origin xyz="0 0 0 " rpy="${M_PI/2.0} 0 ${M_PI/2.0}" />
+        <geometry>
+          
+        </geometry>
+      </visual>
+    </link>
+
+    <!-- right clip for xtion -->
+
+    <joint name="base_xtion_right_clip_joint" type="fixed">
+      <origin xyz="0.017 0.0809 0.00635"
+              rpy="0.0 0.0 0.0" />
+      <parent link="xtion_platform" />
+      <child link="xtion_right_clip" />
+    </joint>
+
+    <link name="xtion_right_clip">
+      <inertial>
+        <mass value="0.01" />
+        <origin xyz="0 0 0" />
+        <inertia ixx="0.001" ixy="0.0" ixz="0.0"
+                 iyy="0.001" iyz="0.0" izz="0.001" />
+      </inertial>
+
+      <visual>
+        <origin xyz="0 0 0 " rpy="${M_PI/2.0} 0 ${M_PI/-2.0}" />
+        <geometry>
+          
+        </geometry>
+        <color rgba="0 225 0 1.0"/>
+      </visual>
+    </link>
+
+    <joint name="xtion_depth_joint" type="fixed">
+      <origin xyz="0 0.018 0" rpy="0 0 0" />
+      <parent link="xtion_link" />
+      <child link="camera_depth_frame" />
+    </joint>
+
+    <link name="camera_depth_frame">
+      <inertial>
+        <mass value="0.01" />
+        <origin xyz="0 0 0" />
+        <inertia ixx="0.001" ixy="0.0" ixz="0.0"
+                 iyy="0.001" iyz="0.0" izz="0.001" />
+      </inertial>
+    </link>
+
+    <joint name="xtion_depth_optical_joint" type="fixed">
+      <origin xyz="0 0 0" rpy="${-M_PI/2} 0 ${-M_PI/2}" />
+      <parent link="camera_depth_frame" />
+      <child link="camera_depth_optical_frame" />
+    </joint>
+
+    <link name="camera_depth_optical_frame">
+      <inertial>
+        <mass value="0.001" />
+        <origin xyz="0 0 0" />
+        <inertia ixx="0.0001" ixy="0.0" ixz="0.0"
+                 iyy="0.0001" iyz="0.0" izz="0.0001" />
+      </inertial>
+    </link>
+
+    <joint name="xtion_rgb_joint" type="fixed">
+      <origin xyz="0 -0.005 0" rpy="0 0 0" />
+      <parent link="xtion_link" />
+      <child link="camera_rgb_frame" />
+    </joint>
+
+    <link name="camera_rgb_frame">
+      <inertial>
+        <mass value="0.001" />
+        <origin xyz="0 0 0" />
+        <inertia ixx="0.0001" ixy="0.0" ixz="0.0"
+                 iyy="0.0001" iyz="0.0" izz="0.0001" />
+      </inertial>
+    </link>
+
+    <joint name="xtion_rgb_optical_joint" type="fixed">
+      <origin xyz="0 0 0" rpy="${-M_PI/2} 0 ${-M_PI/2}" />
+      <parent link="camera_rgb_frame" />
+      <child link="camera_rgb_optical_frame" />
+    </joint>
+
+    <link name="camera_rgb_optical_frame">
+      <inertial>
+        <mass value="0.001" />
+        <origin xyz="0 0 0" />
+        <inertia ixx="0.0001" ixy="0.0" ixz="0.0"
+                 iyy="0.0001" iyz="0.0" izz="0.0001" />
+      </inertial>
+    </link>
+  </xacro:macro>
+
+  <!-- xtion 45 clips -->
+
+  <xacro:macro name="xtion45_left_clip"
+               params="parent number x_loc y_loc z_loc">
+    <joint name="xtion45_left_clip_${number}_joint" type="fixed">
+      <origin xyz="${x_loc} ${y_loc} ${z_loc}"
+              rpy="0 0 0" />
+      <parent link="${parent}" />
+      <child link="xtion45_left_clip_${number}_link" />
+    </joint>
+
+    <link name="xtion45_left_clip_${number}_link">
+      <inertial>
+        <mass value="0.01" />
+        <origin xyz="0 0 0" />
+        <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001" />
+      </inertial>
+
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          
+        </geometry>
+      </visual>
+    </link>
+  </xacro:macro>
+
+  <xacro:macro name="xtion45_right_clip"
+               params="parent number x_loc y_loc z_loc">
+    <joint name="xtion45_right_clip_${number}_joint" type="fixed">
+      <origin xyz="${x_loc} ${y_loc} ${z_loc}"
+              rpy="0 0 0" />
+      <parent link="${parent}" />
+      <child link="xtion45_right_clip_${number}_link" />
+    </joint>
+
+    <link name="xtion45_right_clip_${number}_link">
+      <inertial>
+        <mass value="0.01" />
+        <origin xyz="0 0 0" />
+        <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001" />
+      </inertial>
+
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          
+        </geometry>
+      </visual>
+    </link>
+  </xacro:macro>
+
+  <!-- extension plate -->
+
+  <xacro:macro name="plate_xtension" params="parent x_loc y_loc z_loc">
+    <joint name="plate_xtension_joint" type="fixed">
+      <origin xyz="${x_loc} ${y_loc} ${z_loc}" rpy="0 0 0" />
+      <parent link="${parent}" />
+      <child link="plate_xtension_link" />
+    </joint>
+
+    <link name="plate_xtension_link">
+      <inertial>
+        <mass value="0.01" />
+        <origin xyz="0 0 0" />
+        <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001" />
+      </inertial>
+
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin xyz="0.0265 0.0 0.0032005" rpy="0 0 0" />
+        <geometry>
+          <box size="0.066 0.28 0.006401"/>
+        </geometry>
+      </collision>
+    </link>
+  </xacro:macro>
+</robot>

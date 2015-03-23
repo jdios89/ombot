@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch> 
+  <!-- Launching the camera node XTION-->
+    <!--include file="$(find openni2_launch)/launch/openni2.launch"/-->
+  <!-- Launching the fake laserscan node -->
+    <!--node pkg="depthimage_to_laserscan" type="depthimage_to_laserscan" name="scan_node" args="image:=/camera/depth/image"-->
+      <!--param name="scan_height" value="20"/-->
+      <!--param name="range_min" value="0.45"/-->      
+    <!--/node-->
+</launch>

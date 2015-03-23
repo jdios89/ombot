@@ -1,0 +1,7 @@
+image: labo121.pgm
+resolution: 0.030000
+origin: [-11.550000, -14.430000, 0.000000]
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.196
+

@@ -1,0 +1,376 @@
+/****************PI control for each wheel
+*************************with different gains
+*************the units used in this node are 
+************in revolutions per minute (rpm) *****
+*******************************/
+/*The class PID and its respectives functions were adapted from 
+the Arduino PID library by Brett Beauregard to use with 
+Robotic Operating System and the Arduino UNO, doing the computation
+on the on board computer rather than in the Arduino UNO */
+
+#include "ros/ros.h"
+#include "std_msgs/String.h"
+#include "geometry_msgs/Twist.h"
+#include <sstream>
+#include <string>
+
+double FLinput = 0, FRinput = 0, RRinput =0, RLinput=0;
+double FLsetpoint =0, FRsetpoint =0, RRsetpoint =0, RLsetpoint =0;
+double outputfl = 0, outputfr =0, outputrr =0, outputrl=0;
+double error1, error2, error3, error4;
+double ItermFR=0, ItermFL=0, ItermRL=0, ItermRR=0;
+double kpfl = 0.4,
+       kpfr = 1, 
+       kprr = 1, 
+       kprl = 1;
+double kifl = 0,
+       kifr = 0, 
+       kirr = 0, 
+       kirl = 0;
+double kdfl = 0, 
+       kdfr = 0, 
+       kdrr = 0, 
+       kdrl = 0;
+double outputfll=0;
+double outputrrl=0;
+double outputrll=0;
+double outputfrl=0;
+double time_diff = 0;
+double rec_time = 0; //last time of received commands
+double outmax;
+double outmin;
+
+char output[4];
+std::string str, str2;
+int freqq = 40;
+float tfreqq = 1 / ((float)freqq);
+
+//Define the PID class
+
+class PID
+{
+  public:
+  //Constants used in some of the functions below
+  #define AUTOMATIC	1
+  #define MANUAL	0
+  #define DIRECT  0
+  #define REVERSE  1
+  //commonly used functions **************************************************************************
+    PID(double*, double*, double*,        // * constructor.  links the PID to the Input, Output, and 
+        double, double, double, int);     //   Setpoint.  Initial tuning parameters are also set here
+    void SetMode(int Mode);               // * sets PID to either Manual (0) or Auto (non-0)
+    bool Compute();                       // * performs the PID calculation.  it should be
+                                          //   called every time loop() cycles. ON/OFF and
+                                          //   calculation frequency can be set using SetMode
+                                          //   SetSampleTime respectively
+    void SetOutputLimits(double, double); //clamps the output to a specific range. 0-255 by default, but
+										  //it's likely the user will want to change this depending on
+										  //the application
+    void SetTunings(double, double,       // * While most users will set the tunings once in the 
+                    double);         	  //   constructor, this function gives the user the option
+                                          //   of changing tunings during runtime for Adaptive control
+	void SetControllerDirection(int);	  // * Sets the Direction, or "Action" of the controller. DIRECT
+										  //   means the output will increase when error is positive. REVERSE
+										  //   means the opposite.  it's very unlikely that this will be needed
+										  //   once it is set in the constructor.
+    void SetSampleTime(double);              // * sets the frequency, in seconds, with which 
+                                          //   the PID calculation is performed.  default is 100
+  //Display functions ****************************************************************
+	double GetKp();						  // These functions query the pid for interal values.
+	double GetKi();						  //  they were created mainly for the pid front-end,
+	double GetKd();						  // where it's important to know what is actually 
+	int GetMode();						  //  inside the PID.
+	int GetDirection();					  //
+  private:
+	void Initialize();
+	double dispKp;				// * we'll hold on to the tuning parameters in user-entered 
+	double dispKi;				//   format for display purposes
+	double dispKd;				//
+    double kp;                  // * (P)roportional Tuning Parameter
+    double ki;                  // * (I)ntegral Tuning Parameter
+    double kd;                  // * (D)erivative Tuning Parameter
+	int controllerDirection;
+    double *myInput;              // * Pointers to the Input, Output, and Setpoint variables
+    double *myOutput;             //   This creates a hard link between the variables and the 
+    double *mySetpoint;           //   PID, freeing the user from having to constantly tell us
+                                  //   what these values are.  with pointers we'll just know.
+	double lastTime;   //Ros time variable
+	double ITerm, lastInput;
+	double SampleTime;  // Ros time variable
+	double outMin, outMax;
+	bool inAuto;
+};
+PID::PID(double* Input, double* Output, double* Setpoint, double Kp, double Ki, double Kd, int ControllerDirection)
+{
+    myOutput = Output;
+    myInput = Input;
+    mySetpoint = Setpoint;
+	inAuto = false;
+	PID::SetOutputLimits(-90, 90);	//Min and Max Output for the commands for the motors			
+    SampleTime = 0.1;							//default Controller Sample Time is 0.1 seconds
+
+    PID::SetControllerDirection(ControllerDirection);
+    PID::SetTunings(Kp, Ki, Kd);
+    lastTime = ros::Time::now().toSec()-SampleTime;				
+}
+//Function that calculates value each iteration
+bool PID::Compute()
+{
+   if(!inAuto) return false;
+   double now = ros::Time::now().toSec();// Getting the time ROS style
+   double timeChange = (now - lastTime);
+   if(timeChange>=SampleTime)
+   {
+      /*Compute all the working error variables*/
+	  double input = *myInput;
+      double error = *mySetpoint - input;
+      ITerm+= (ki * error);
+      if(ITerm > outMax) ITerm= outMax;
+      else if(ITerm < outMin) ITerm= outMin;
+      double dInput = (input - lastInput);
+ 
+      /*Compute PID Output*/
+      double output = kp * error + ITerm- kd * dInput;
+      
+	  if(output > outMax) output = outMax;
+      else if(output < outMin) output = outMin;
+	  *myOutput = output;
+	  
+      /*Remember some variables for next time*/
+      lastInput = input;
+      lastTime = now;
+	  return true;
+   }
+   else return false;
+}
+//Change values on the fly
+void PID::SetTunings(double Kp, double Ki, double Kd)
+{
+   if (Kp<0 || Ki<0 || Kd<0) return;
+ 
+   dispKp = Kp; dispKi = Ki; dispKd = Kd;
+   
+   double SampleTimeInSec = SampleTime;  
+   kp = Kp;
+   ki = Ki * SampleTimeInSec;
+   kd = Kd / SampleTimeInSec;
+ 
+  if(controllerDirection ==REVERSE)
+   {
+      kp = (0 - kp);
+      ki = (0 - ki);
+      kd = (0 - kd);
+   }
+}
+  //Set the sample time
+void PID::SetSampleTime(double NewSampleTime)
+{
+   if (NewSampleTime > 0)
+   {
+      double ratio  = (double)NewSampleTime
+                      / (double)SampleTime;
+      ki *= ratio;
+      kd /= ratio;
+      SampleTime = NewSampleTime;
+   }
+}
+//SetOutputLimits(...)
+void PID::SetOutputLimits(double Min, double Max)
+{
+   if(Min >= Max) return;
+   outMin = Min;
+   outMax = Max;
+ 
+   if(inAuto)
+   {
+	   if(*myOutput > outMax) *myOutput = outMax;
+	   else if(*myOutput < outMin) *myOutput = outMin;
+	 
+	   if(ITerm > outMax) ITerm= outMax;
+	   else if(ITerm < outMin) ITerm= outMin;
+   }
+}
+//Setting mode 
+void PID::SetMode(int Mode)
+{
+    bool newAuto = (Mode == AUTOMATIC);
+    if(newAuto == !inAuto)
+    {  /*we just went from manual to auto*/
+        PID::Initialize();
+    }
+    inAuto = newAuto;
+}
+//Initialize the PID
+void PID::Initialize()
+{
+   ITerm = *myOutput;
+   lastInput = *myInput;
+   if(ITerm > outMax) ITerm = outMax;
+   else if(ITerm < outMin) ITerm = outMin;
+}
+void PID::SetControllerDirection(int Direction)
+{
+   if(inAuto && Direction !=controllerDirection)
+   {
+	  kp = (0 - kp);
+      ki = (0 - ki);
+      kd = (0 - kd);
+   }   
+   controllerDirection = Direction;
+}
+//Displaying functions
+double PID::GetKp(){ return  dispKp; }
+double PID::GetKi(){ return  dispKi;}
+double PID::GetKd(){ return  dispKd;}
+int PID::GetMode(){ return  inAuto ? AUTOMATIC : MANUAL;}
+int PID::GetDirection(){ return controllerDirection;}
+
+
+
+void getinspeeds(const std_msgs::String::ConstPtr& msg)
+{
+	int temp;
+	str = msg->data.c_str();
+	temp = ((int)((unsigned char)str.at(0)));
+	RRinput = (float)temp - 120;   //RR
+	temp = ((int)((unsigned char)str.at(1)));
+	RLinput = (float)temp - 120;   //RL
+	temp = ((int)((unsigned char)str.at(2)));
+	FRinput = (float)temp - 120;    //FR
+	temp = ((int)((unsigned char)str.at(3)));
+	FLinput = (float)temp - 120;  //FL
+
+	if(abs(FLinput) <=2)
+	{
+		FLinput = 0;
+	}
+	if(abs(FRinput) <=2)
+	{
+		FRinput = 0;
+	}
+	if(abs(RRinput) <=2)
+	{
+		RRinput = 0;
+	}
+	if(abs(RLinput) <=2)
+	{
+		RLinput = 0;
+	}
+
+}
+
+void getindesiredSpeeds(const std_msgs::StringConstPtr& msg2)
+{
+	int temp2= 0;
+	str2 = msg2->data.c_str();
+	temp2 = ((int)((unsigned char)str2.at(0)));
+	FLsetpoint = (float)temp2 ;
+	temp2 = ((int)((unsigned char)str2.at(1)));
+	FRsetpoint = (float)temp2;
+	temp2 = ((int)((unsigned char)str2.at(2)));
+	RRsetpoint = (float)temp2;
+	temp2 = ((int)((unsigned char)str2.at(3)));
+	RLsetpoint = (float)temp2;
+
+	FLsetpoint = FLsetpoint - 101; 
+	FRsetpoint = FRsetpoint - 101;
+	RRsetpoint = RRsetpoint - 101;
+	RLsetpoint = RLsetpoint - 101;
+	rec_time = ros::Time::now().toSec();
+	
+}
+	
+
+int main(int argc, char **argv)
+{
+	ros::init(argc, argv, "SpeedControl");
+	ros::NodeHandle n;
+        ros::NodeHandle nh("~");
+                
+        n.param("max_output", outmax, 75.0);
+        n.param("min_output", outmin, -75.0); 
+        
+	ros::Subscriber sub = n.subscribe("speeds", 10, getinspeeds);    //Get the current speeds
+	ros::Subscriber sub2 = n.subscribe("desSpeed", 10, getindesiredSpeeds); //Get the desired speeds
+	ros::Publisher speeds = n.advertise<std_msgs::String>("cmd_motors", 5); //Publish the commands for the motors
+	ros::Publisher speeds2 = n.advertise<geometry_msgs::Twist>("input_speeds", 1);
+        ros::Publisher speeds3 = n.advertise<geometry_msgs::Twist>("setpoint_speeds",1);
+        ros::Publisher speeds4 = n.advertise<geometry_msgs::Twist>("output_speeds",1);
+	ros::Rate loop_rate(freqq);
+        //Initialize the 4 PID controllers 
+        PID FRpid(&FRinput, &outputfr, &FRsetpoint, kpfr, kifr, kdfr, DIRECT),
+            FLpid(&FLinput, &outputfl, &FLsetpoint, kpfl, kifl, kdfl, DIRECT),
+            RRpid(&RRinput, &outputrr, &RRsetpoint, kprr, kirr, kdrr, DIRECT),
+            RLpid(&RLinput, &outputrl, &RLsetpoint, kprl, kirl, kdrl, DIRECT);
+        FRpid.SetSampleTime(tfreqq);
+        FLpid.SetSampleTime(tfreqq);
+        RRpid.SetSampleTime(tfreqq);
+        RLpid.SetSampleTime(tfreqq);
+        FRpid.SetMode(AUTOMATIC);
+        FLpid.SetMode(AUTOMATIC);
+        RRpid.SetMode(AUTOMATIC); 
+        RLpid.SetMode(AUTOMATIC); 
+	while (ros::ok())
+	{
+                n.param("max_output", outmax, 75.0);
+                n.param("min_output", outmin, -75.0);
+                FRpid.SetOutputLimits(outmin, outmax);
+                FLpid.SetOutputLimits(outmin, outmax);
+                RRpid.SetOutputLimits(outmin, outmax);
+                RLpid.SetOutputLimits(outmin, outmax);	
+		if(ros::Time::now().toSec() > rec_time + 1)
+		{
+			FLsetpoint = 0;
+			FRsetpoint = 0;
+			RRsetpoint = 0;
+			RLsetpoint = 0;
+		}
+		//Proportional values of speed 
+		FRpid.Compute();
+                FLpid.Compute();
+                RRpid.Compute();
+                RLpid.Compute();		
+	
+		/////////////////////////////////////////////
+		/////////////Applying offset/////////////////
+		geometry_msgs::Twist mytwist,mytwist2,mytwist3;
+		mytwist.linear.x = FLsetpoint;
+		mytwist.linear.y = FRsetpoint;
+		mytwist.linear.z = RLsetpoint;
+		mytwist.angular.x = RRsetpoint;
+                mytwist2.linear.x = outputfl;
+                mytwist2.linear.y = outputfr;
+                mytwist2.linear.z = outputrl;
+                mytwist2.angular.x = outputrr;
+                mytwist3.linear.x = FLinput;
+                mytwist3.linear.y = FRinput;
+                mytwist3.linear.z = RLinput;
+                mytwist3.angular.x = RRinput;
+		outputfll = outputfl;
+		outputfrl = outputfr;		
+		outputrll = outputrl;
+		outputrrl = outputrr;
+		
+		outputfll = outputfl + 91; //avoid writing the null character
+		outputfrl = /*outputfr + */91;
+		outputrll = /*outputrl +*/ 91;
+		outputrrl = /*outputrr +*/ 91;
+		////////Set into ccspeeds ///////////////////
+		output[0] = (char)((int)outputfll);
+		output[1] = (char)((int)outputfrl);
+		output[2] = (char)((int)outputrll);
+		output[3] = (char)((int)outputrrl);
+		/////////////////////////////////////////////
+		std_msgs::String ccspeeds;
+		
+		ccspeeds.data = output;
+		speeds.publish(ccspeeds);
+		speeds2.publish(mytwist3); //Input speeds
+                speeds3.publish(mytwist); //Setpoint speeds
+                speeds4.publish(mytwist2); //output for debugging
+		ros::spinOnce();
+		loop_rate.sleep();
+	}	
+
+	return 0;
+}

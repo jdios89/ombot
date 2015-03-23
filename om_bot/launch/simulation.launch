@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<launch>
+  <node pkg="my_repository" type="rodom_broadcastercmd_vel" name="Odometry" output="screen"/>
+  <node pkg="my_repository" type="rgoodwheels_s" name="wheels" output="screen"/>
+  <include file="$(find my_repository)/launch/display.launch" />
+</launch>

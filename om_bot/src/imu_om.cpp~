@@ -1,0 +1,114 @@
+#include "ros/ros.h"
+#include "std_msgs/String.h"
+#include "geometry_msgs/Twist.h"
+#include "sensor_msgs/Imu.h"
+#include <sstream>
+#include <string>
+#include "geometry_msgs/Quaternion.h"
+#include <tf/transform_broadcaster.h>
+std::string str; 
+sensor_msgs::Imu imu_data;
+int distance_cm = 0;
+double th = 0;
+double last_seconds;
+double dth = 0;
+double vvth = 0;
+double dvth = 0;
+double lvth = 0;
+double alpha = 0.15;
+int temp = 0;
+int cont = 0;
+int dst[100];
+int flag = 0;
+int vth = 0;
+char frameid[] = "/imu";
+float distance_cma = 0;
+char temp1, temp2;
+signed long int temporal;
+
+void get_gyro(const std_msgs::String::ConstPtr& msg)
+{
+  flag = 1;
+  str = msg->data.c_str();
+  temp1 =(char)str.at(9);
+  temp2 =(char)str.at(10);
+  if( temp1 == 0b01111111)
+  {
+    temp1 = 0b00000000;
+  }
+  unsigned char output;
+  output = temp1 & 0b10000000; //read the first bit to determine the sign
+  if(output == 0b10000000)
+  {
+    if(temp2 == 0b11111111)
+    {
+      temp2 = 0b00000000;
+    }
+  }
+  if(output == 0b00000000)
+  {
+    if(temp2 == 0b00000001)
+    {
+      temp2 = 0b00000000;
+    }
+  }
+  vth = temp1 << 8 | temp2;
+
+//  distance_cmt = str.at(9) << 8 | str.at(10);
+}
+
+int main(int argc, char **argv)
+{
+
+  ros::init(argc, argv, "imu");
+  ros::NodeHandle n;
+  ros::Subscriber sub = n.subscribe("speeds", 10, get_gyro);    //Get the raw gyro data
+  ros::Publisher imu_d = n.advertise<sensor_msgs::Imu>("Imu", 10); //Publish the gyro data
+  
+  imu_data.header.frame_id = frameid;
+  ros::Rate loop_rate(100);
+  while (ros::ok())
+  {
+    ros::spinOnce();
+    if(flag == 0)
+    { 
+      vth = 0;
+    }
+    vvth = alpha * vth + (1 - alpha)*lvth;  //digital low pass filter
+    lvth = vvth;
+    temporal = vvth;// / 40.0 ;
+    temporal = temporal;// * 40.0;
+
+    dvth = temporal;
+    dvth = temporal ;
+    dvth = dvth / 65.5; //calculation to get in degrees/sec ; sensitivity of +- 500 degrees in +- 32767
+    dvth = dvth * 3.1415 / 180; //now in rad/sec
+    dvth = dvth + 0.021 ;  //get it to zero
+    th += dvth * (ros::Time::now().toSec() - last_seconds);
+    geometry_msgs::Quaternion imu_quat = tf::createQuaternionMsgFromYaw(th);
+    imu_data.angular_velocity.x = 0.0;
+    imu_data.angular_velocity.y = 0.0;
+    imu_data.angular_velocity.z = dvth;
+    imu_data.angular_velocity_covariance[0] = 9999;
+    imu_data.angular_velocity_covariance[4] = 9999;
+    imu_data.angular_velocity_covariance[8] = 0.01;
+    imu_data.linear_acceleration.x = 0.0;
+    imu_data.linear_acceleration.y = 0.0;
+    imu_data.linear_acceleration.z = 0.0;
+    imu_data.linear_acceleration_covariance[0] = -1;
+   // range_data.range = (int)distance_cmt; 
+    imu_data.header.stamp = ros::Time::now();
+    imu_data.orientation = imu_quat;
+    imu_data.orientation_covariance[0] = 99999;
+    imu_data.orientation_covariance[4] = 99999;
+    imu_data.orientation_covariance[8] = 0.01;   
+    imu_d.publish(imu_data);
+    //flag = 0;
+	flag = 0;
+    last_seconds = ros::Time::now().toSec();
+    loop_rate.sleep();
+  }
+  return 0;
+}
+
+
