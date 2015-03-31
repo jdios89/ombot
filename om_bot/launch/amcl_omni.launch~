@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
- <node name="map_server" pkg="map_server" type="map_server" args="$(find my_repository)/maps/march16-1.yaml"/>
-<node pkg="amcl" type="amcl" name="amcl">
+ <node name="map_server" pkg="map_server" type="map_server" args="$(find my_repository)/maps/hall18-1.yaml"/>
+<node pkg="amcl" type="amcl" name="amcl" output="screen">
   <!-- Publish scans from best pose at a max of 10 Hz -->
   <param name="odom_model_type" value="omni"/>
   <param name="odom_alpha5" value="0.1"/>

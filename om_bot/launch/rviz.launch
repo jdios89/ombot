@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Launching the fake laserscan node -->
+    <node pkg="rviz" type="rviz" output="screen" name="rviz_omni" args="-d $(find my_repository)/rviz/my_vis.rviz">         
+    </node>
+</launch>

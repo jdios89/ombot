@@ -132,43 +132,47 @@ class Arduino(object):
        
 
         def _WriteSerial(self, message):
-                self._SerialPublisher.publish(String(str(self._Counter) + ", out: " + message))
-                self._SerialDataGateway.Write(messaInitializeBatteryMonitorge)
+                #self._SerialPublisher.publish(String(str(self._Counter) + ", out: " + message))
+                self._SerialDataGateway.Write(message)
 
-        def __init__(self, port="/dev/ttyACM0", baudrate=54700):
+        def __init__(self, port="/dev/ttyACM0", baudrate=57600):
                 '''
                 Initializes the receiver class. 
                 port: The serial port to listen to.
                 baudrate: Baud rate for the serial communication
                 '''
-
+                
                 self._Counter = 0
 
                 rospy.init_node('arduino')
-
+              
                 port = rospy.get_param("~port", "/dev/ttyACM0")
-                baudRate = int(rospy.get_param("~baudRate", 54700))
+                baudRate = int(rospy.get_param("~baudRate", 57600))
+           
 
                 rospy.loginfo("Starting with serial port: " + port + ", baud rate: " + str(baudRate))
+                self._SerialDataGateway = SerialDataGateway(port, baudRate,  self._HandleReceivedLine)
+                
+
                 # Service for IMU use
                 self._ImuService = rospy.Service('Use_Imu', imuactive, self._sendImu)
                 # Service for angular and linear correction values
                 self._angularservice = rospy.Service('Angular_float_value', angularscale, self._sendang)
                 self._linearservice = rospy.Service('Linear_float_value', linearscale, self._sendlin)
                 # subscriptions
-                rospy.Subscriber("cmd_vel", Twist, self._GetSpeeds)
+                rospy.Subscriber("cmd_vel", Twist, self._GetSpeeds, queue_size=10)
 
-                self._OdometryPublisher = rospy.Publisher("odom", Odometry)
+                self._OdometryPublisher = rospy.Publisher("odom", Odometry, queue_size=10)
                 self._OdometryTransformBroadcaster = tf.TransformBroadcaster()
-                self._RangePublisher = rospy.Publisher("ulrange", Range)
-                self._SerialPublisher = rospy.Publisher('serial', String)
-                self._speedsimupub = rospy.Publisher('speeds', String)
-                self._SerialDataGateway = SerialDataGateway(port, baudRate,  self._HandleReceivedLine)
+                self._RangePublisher = rospy.Publisher("ulrange", Range, queue_size=10)
+                self._SerialPublisher = rospy.Publisher('serial', String, queue_size=10)
+                self._speedsimupub = rospy.Publisher('speeds', String, queue_size=10)
+               
 
         def Start(self):
                 rospy.logdebug("Starting")
                 self._SerialDataGateway.Start()
-
+ 
         def Stop(self):
                 rospy.logdebug("Stopping")
                 self._SerialDataGateway.Stop()
@@ -182,7 +186,7 @@ class Arduino(object):
 
                 message = 's %d %d %d %d %d %d\r' % self._GetBaseAndExponents((vx, vy, omega))
                 rospy.logdebug("Sending speed command message: " + message)
-                self._SerialDataGateway.Write(message)
+                self._WriteSerial(message)
                 #rospy.loginfo("Sent: " + message)
         def _sendImu(self, request):
                 """ Service to enable or disable imu for odometry"""
@@ -195,21 +199,21 @@ class Arduino(object):
                    message = 'noimu\r'
                    rospy.loginfo("Imu disabled")
 
-                self._SerialDataGateway.Write(message)
+                self._WriteSerial(message)
                 return imuactiveResponse()
 
         def _sendang(self, request):
                 rospy.set_param("~angular_correction", request.avaluescale)
                 message = 'ascale %d %d\r' % self._GetBaseAndExponent(request.avaluescale)
                 rospy.loginfo("Sending correction value: " + message)
-                self._SerialDataGateway.Write(message)
+                self._WriteSerial(message)
                 return angularscaleResponse()
 
         def _sendlin(self, request):
                 rospy.set_param("~linear_correction", request.lvaluescale)
                 message = 'lscale %d %d\r' % self._GetBaseAndExponent(request.lvaluescale)
                 rospy.loginfo("Sending correction value: " + message)
-                self._SerialDataGateway.Write(message)
+                self._WriteSerial(message)
                 return linearscaleResponse()
 
         def _InitializeBase(self):
@@ -221,16 +225,16 @@ class Arduino(object):
                      message = 'Startnoimu\r'
 
                 rospy.loginfo("Initializing Base " + message)
-                self._SerialDataGateway.Write(message)
+                self._WriteSerial(message)
                 
                 lincorrection = rospy.get_param("~linear_correction", 1.0)
                 angcorrection = rospy.get_param("~angular_correction", 0.984)
                 message = 'ascale %d %d\r' % self._GetBaseAndExponent(angcorrection)
                 rospy.loginfo("Sending correction value: " + message)
-                self._SerialDataGateway.Write(message)
+                self._WriteSerial(message)
                 message = 'lscale %d %d\r' % self._GetBaseAndExponent(lincorrection)
                 rospy.loginfo("Sending correction value: " + message)
-                self._SerialDataGateway.Write(message)
+                self._WriteSerial(message)
 
         def _GetBaseAndExponent(self, floatValue, resolution=4):
                 '''

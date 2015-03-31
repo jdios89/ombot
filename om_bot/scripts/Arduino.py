@@ -55,6 +55,7 @@ class Arduino(object):
                     drange = float(lineParts[1])
 
                     rangesensor = Range()
+                    drange = drange / 100;
                     rangesensor.range = drange
                     rangesensor.header.frame_id = "ul_range"
                     rangesensor.field_of_view = 0.4

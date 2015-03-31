@@ -16,10 +16,18 @@ find_package(catkin REQUIRED COMPONENTS
   urdf
   sensor_msgs
   message_generation
+
+  move_base_msgs
+  actionlib
+  costmap_2d
+  dynamic_reconfigure
 )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
+generate_dynamic_reconfigure_options(
+    cfg/mydynamic.cfg
+)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -120,7 +128,9 @@ include_directories(
 # add_library(my_repository
 #   src/${PROJECT_NAME}/my_repository.cpp
 # )
-
+add_library(simple_layer src/map_plugin/simple_layer.cpp)
+add_library(simple_layer_sub src/map_plugin/simple_layer_sub.cpp)
+add_library(grid_layer src/map_plugin/grid_layer.cpp)
 ## Declare a cpp executable
 # add_executable(my_repository_node src/my_repository_node.cpp)
 add_executable(rtf_broadcaster src/rtf_broadcaster.cpp)
@@ -135,6 +145,9 @@ add_executable(rgoodwheelsr src/rgoodwheelsr.cpp)
 add_executable(ul_range src/ul_range.cpp)
 add_executable(imu src/imu_om.cpp)
 add_executable(command src/control_transform.cpp)
+add_executable(fake_laser src/fake_laserscan.cpp)
+add_executable(get_close src/close_to_object.cpp)
+add_executable(push_object src/push_object.cpp)
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(my_repository_node my_repository_generate_messages_cpp)
@@ -143,7 +156,17 @@ add_executable(command src/control_transform.cpp)
 # target_link_libraries(my_repository_node
 #   ${catkin_LIBRARIES}
 # )
+add_dependencies(simple_layer_sub ${PROJECT_NAME}_gencfg)
+target_link_libraries(push_object
+   ${catkin_LIBRARIES}
+  )
+target_link_libraries(fake_laser
+   ${catkin_LIBRARIES}
+  )
 
+target_link_libraries(get_close
+   ${catkin_LIBRARIES}
+ )
 target_link_libraries(command
    ${catkin_LIBRARIES}
  )
