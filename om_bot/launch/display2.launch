@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <launch>
-	
+<!--	
   <arg name="gui" default="false" />
   <arg name="na" value="b"/>
   <param name="robot_description" textfile="$(find my_repository)/robots/omni2.urdf.xacro" />
@@ -11,8 +11,9 @@
     <param name="source_list" value="b"/>
   </node>
 
-  <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find my_repository)/rviz/omni2.rviz" required="true" />   	
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" /> -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find my_repository)/rviz/omni2.rviz" required="true" />
+  <node name="wheels_tf" type="rgoodwheelsr" pkg="my_repository" required="true"/>   	
   <!--node name="rviz" pkg="rviz" type="rviz" args="-d $(find urdf_tutorial)/urdf.rviz" required="true" /-->
 </launch>
 

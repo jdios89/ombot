@@ -6,7 +6,6 @@
 #include "sensor_msgs/Range.h"
 #include "std_msgs/Bool.h"
 #include "std_msgs/String.h"
-
 float input_range = 0.0; //Initialize the input range with arbitrary data
 float setpoint_range = 0.13; //Its in meters ! 
 float output_speed_x = 0.0;

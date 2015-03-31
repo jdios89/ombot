@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<launch>
+ <node name="map_server" pkg="map_server" type="map_server" args="$(find my_repository)/maps/hall18-1.yaml" output="screen"/>
+  <node name="static_tf0" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 /map /odom 100"/>
+</launch>
+
