@@ -1,0 +1,9 @@
+#goal definition
+float32 distance
+---
+#result definition
+float32 final_distance
+string result
+---
+#feedback
+float32 distance_from

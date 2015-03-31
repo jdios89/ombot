@@ -1,0 +1,9 @@
+#goal definition
+int32 distance
+---
+#result definition
+int32 final_distance
+string result
+---
+#feedback
+int32 distance_from

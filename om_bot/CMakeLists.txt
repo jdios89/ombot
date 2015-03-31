@@ -21,6 +21,8 @@ find_package(catkin REQUIRED COMPONENTS
   actionlib
   costmap_2d
   dynamic_reconfigure
+
+  actionlib_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -85,6 +87,10 @@ add_service_files(
 #   Action1.action
 #   Action2.action
 # )
+add_action_files(
+  DIRECTORY action
+  FILES get_close.action
+)
 
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
@@ -94,6 +100,7 @@ add_service_files(
 generate_messages(
     DEPENDENCIES
     std_msgs
+    actionlib_msgs
   )
 
 ###################################
@@ -111,6 +118,7 @@ catkin_package(
 #  CATKIN_DEPENDS roscpp rospy std_msgs tf
 #  DEPENDS system_lib
    CATKIN_DEPENDS message_runtime
+   CATKIN_DEPENDS actionlib_msgs
 )
 
 ###########
@@ -122,6 +130,7 @@ catkin_package(
 # include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
@@ -148,6 +157,8 @@ add_executable(imu src/imu_om.cpp)
 add_executable(command src/control_transform.cpp)
 add_executable(fake_laserr src/fake_laserscan.cpp)
 add_executable(get_closse src/close_to_object.cpp)
+add_executable(close_action_server src/getclose_action/close_action.cpp)
+add_executable(test_action src/test_action.cpp)
 #add_executable(push_object src/push_object.cpp)
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
@@ -157,7 +168,16 @@ add_executable(get_closse src/close_to_object.cpp)
 # target_link_libraries(my_repository_node
 #   ${catkin_LIBRARIES}
 # )
-add_dependencies(simple_layer_sub ${PROJECT_NAME}_gencfg)
+add_dependencies(simple_layer_sub 
+   ${PROJECT_NAME}_gencfg
+  )
+
+target_link_libraries(test_action
+   ${catkin_LIBRARIES}
+  )
+target_link_libraries(close_action_server
+   ${catkin_LIBRARIES}
+  )
 target_link_libraries(pushing
    ${catkin_LIBRARIES}
   )
@@ -210,6 +230,10 @@ target_link_libraries(ul_range
 target_link_libraries(imu
    ${catkin_LIBRARIES}
  )
+
+add_dependencies(close_action_server 
+   ${my_repositorylib}_EXPORTED_TARGETS
+  )
 #############
 ## Install ##
 #############
