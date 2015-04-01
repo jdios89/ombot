@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
   <!-- Launch the OpenNI drivers -->
-        <param name="/camera/driver/color_mode" value="1" />
+        <!--param name="/camera/driver/color_mode" value="1" /-->
 	<arg name="camera"      default="camera"/>
 	<arg name="publish_tf"  default="false"/>
 	<arg name="depth_registration"              default="true"/>
