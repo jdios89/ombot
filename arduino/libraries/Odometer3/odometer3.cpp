@@ -1,0 +1,113 @@
+#include "odometer3.h"
+#include "Arduino.h"
+#define PI 3.14159265
+#define TwoPI 6.28318531
+
+Odometer3::Odometer3(double* wFL, double* wFR, double* wRR, double* wRL, float* yyaw, double* linscale, double* angscale)
+{
+    //Attach wheel speeds
+    rFL = wFL;
+    rFR = wFR;
+    rRR = wRR;
+    rRL = wRL;
+    yaw = yyaw;
+    use_imu = false;
+    l1 = 0.16;
+    l2 = 0.1665;
+    lsum = l1 + l2;
+    dd = 0.245;
+    sm = 0.035;
+    radius_wheel = 0.0468;
+    quarter_radiuswheel = radius_wheel / 4.0;
+    half_radiuswheel = radius_wheel / 2.0;
+    lastTime = millis();
+    support_constant1 = lsum + dd - sm;
+    support_constant2 = lsum - dd + sm;
+    yfl = half_radiuswheel * support_constant2 / support_constant1;
+    yrl = radius_wheel * lsum / support_constant1;
+    wsupport = radius_wheel / support_constant1;
+    //Initialize variables
+    x = 0.0;
+    y = 0.0;
+    th = 0.0;
+    _th = 0.0;
+    vx = 0.0;
+    vy = 0.0;
+    w = 0.0;
+    alpha = 0.05; //alpha muy baja
+    //attach linear and angular scales
+    linearscale = linscale;
+    angularscale = angscale;
+}
+void Odometer3::useImu()
+{
+     use_imu = true;
+     offset = (-*yaw) - (th * 180 / PI);
+}
+void Odometer3::noImu()
+{
+     use_imu = false;
+}
+void Odometer3::update()
+{
+    //Conversion from rpm to rad/sec with the factor 2 pi / 60 = 0.104717
+    double RRinput = *rRR * 0.104717;
+    double RLinput = *rRL * 0.104717;
+    double FRinput = *rFR * 0.104717;
+    double FLinput = *rFL * 0.104717;
+    //linear and angular scale only applies for odometry using wheels 
+    /*
+    vx = (quarter_radiuswheel) * (FLinput + FRinput + RLinput + RRinput) * *linearscale;
+    vy = (quarter_radiuswheel) * (-FLinput + FRinput +RLinput - RRinput) * *linearscale;
+    w = (quarter_radiuswheel) * ((1/(-lsum))*FLinput + (1/(lsum))*FRinput + (1/(-lsum))*RLinput + (1/(lsum))*RRinput ) * *angularscale;
+    */
+    vx = (half_radiuswheel) * (FLinput + FRinput) * *linearscale;
+    vy = (yfl * *linearscale * FLinput) + (*linearscale * half_radiuswheel * FRinput) + (RLinput * yrl * *linearscale) ;
+    w = ( (-wsupport * FLinput) + (-wsupport * RLinput) ) * *angularscale;
+    
+    unsigned long dt = (millis() - lastTime);
+    secs = dt / 1000.0;
+    
+    _th = th; //Last value of th
+    
+    if(use_imu) //get the yaw from the IMU with the correspondant offset
+    {
+        th = ((-*yaw) - offset) * PI / 180;
+        if (th > PI)
+        {
+            th -= TwoPI;
+        }
+        else
+        {
+            if (th <= -PI)
+            {
+                th += TwoPI;
+            }
+        }
+        /*if( abs(th - _th) > 0.45)  //if noise then apply low pass filter
+        {
+            th = th * alpha + (1-alpha) * _th;
+        }*/
+    }
+    
+    double delta_x = (vx * (double)cos(th) - vy * (double)sin(th)) * secs;
+    double delta_y = (vx * (double)sin(th) + vy * (double)cos(th)) * secs;
+    double delta_th = w * secs;
+    if(!use_imu) //if not using IMU do the calculations using wheels
+    	th += delta_th;
+    if (th > PI)
+    {
+        th -= TwoPI;
+    }
+    else
+    {
+        if (th <= -PI)
+        {
+            th += TwoPI;
+        }
+    }
+    x += delta_x;
+    y += delta_y;
+    lastTime = millis();
+}
+

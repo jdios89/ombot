@@ -3,7 +3,7 @@
   <!--Starting the serial communication with the Arduino-->
   <node pkg="my_repository" type="Arduino.py" name="Arduino" output="screen" >
     <param name="imuenable" value='False'/>
-    <param name="angular_correction" value="0.97"/>
+    <param name="angular_correction" value="0.98"/>
     <param name="linear_correction" value="0.9"/>
   </node>
   <!--node pkg="my_repository" type="imu" name="Imu" output="screen"/-->
