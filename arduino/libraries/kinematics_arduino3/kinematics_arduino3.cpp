@@ -19,7 +19,7 @@ kinematics_arduino3::kinematics_arduino3(double* evx, double* evy, double* evth,
     lastTime = millis();
     l1 = 0.16;
     l2 = 0.1665;
-    dd = 0.245;
+    dd = 0.24;
     sm = 0.035;
     radius_wheel = 0.052;
     linearscale = linscale;
@@ -48,6 +48,23 @@ bool kinematics_arduino3::compute()
         //FR = ((linear.x) - (linear.y) + ((l1+l2) * angular.z)) / radius_wheel ;
         //RL = ((linear.x) - (linear.y) - ((l1+l2) * angular.z)) / radius_wheel ;
         //RR = ((linear.x) + (linear.y) + ((l1+l2) * angular.z)) / radius_wheel ;
+        //double fl, fr, rl;
+        //fl = ((*vx / *linearscale) - (*vy / *linearscale) - ((l1+l2) * (*vth / *angularscale))) / radius_wheel ;
+        //fr = ((*vx / *linearscale) + (*vy / *linearscale) + ((l1+l2) * (*vth / *angularscale))) / radius_wheel ;
+        //Change
+        //fl = ((*vy / *linearscale) - (*vx / *linearscale) - ((dd-sm) * (*vth /*/ *angularscale*/))) / radius_wheel ;
+        
+        //double e11, e22, e33;
+        //e11 = -((l1+l2)/radius_wheel)*(-0.21);
+        //e22 = -((dd-sm)/radius_wheel)*(-0.21);
+        //e33 = ((l1+l2)/radius_wheel)*(-0.21);
+        //double flon = 1.055;
+        //*FL = flon * (1 + (e11/fl))*((*vx / *linearscale) - (*vy / *linearscale) - ((l1+l2) * (*vth / *angularscale))) / radius_wheel ;
+        //*FR = flon * (1 + (e33/fr))*((*vx / *linearscale) + (*vy / *linearscale) + ((l1+l2) * (*vth / *angularscale))) / radius_wheel ;
+        //Change
+        //*RL = flon * (1 + (e22/rl))*((*vy / *linearscale) - (*vx / *linearscale) - ((dd-sm) * (*vth /*/ *angularscale*/))) / radius_wheel ;
+        
+
         *FL = ((*vx / *linearscale) - (*vy / *linearscale) - ((l1+l2) * (*vth / *angularscale))) / radius_wheel ;
         *FR = ((*vx / *linearscale) + (*vy / *linearscale) + ((l1+l2) * (*vth / *angularscale))) / radius_wheel ;
         /*Change*/

@@ -11,6 +11,7 @@ Panels:
         - /TF1/Frames1
         - /Map1
         - /LaserScan1
+        - /LaserScan1/Status1
       Splitter Ratio: 0.549296
     Tree Height: 435
   - Class: rviz/Selection
@@ -170,6 +171,8 @@ Visualization Manager:
           Value: true
         imu:
           Value: true
+        map:
+          Value: true
         odom:
           Value: true
         shovel_link:
@@ -186,34 +189,9 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
-        odom:
-          base_link:
-            FL_wheel:
-              {}
-            FR_wheel:
-              {}
-            RL_wheel:
-              {}
-            RR_wheel:
-              {}
-            camera_link:
-              {}
-            imu:
-              {}
-            shovel_link:
-              {}
-            ul_ranger:
-              {}
-            xtion_platform:
-              camera_linkvisual:
-                {}
-              xtion_link:
-                camera_depth_frame:
-                  camera_depth_optical_frame:
-                    {}
-                camera_rgb_frame:
-                  camera_rgb_optical_frame:
-                    {}
+        map:
+          odom:
+            {}
       Update Interval: 0
       Value: true
     - Alpha: 0.7
@@ -239,9 +217,9 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: true
       Max Color: 255; 255; 255
-      Max Intensity: 2.272
+      Max Intensity: 3.87109
       Min Color: 0; 0; 0
-      Min Intensity: 0.386272
+      Min Intensity: 1.04686
       Name: LaserScan
       Position Transformer: XYZ
       Queue Size: 10
@@ -256,7 +234,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: odom
+    Fixed Frame: map
     Frame Rate: 30
   Name: root
   Tools:
@@ -310,5 +288,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 758
-  X: 716
-  Y: 52
+  X: 592
+  Y: 24

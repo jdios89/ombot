@@ -1,6 +1,8 @@
 #include <ros/ros.h>
 #include <move_base_msgs/MoveBaseAction.h>
 #include <actionlib/client/simple_action_client.h>
+#include <actionlib/client/terminal_state.h>
+#include <my_repository/get_closeAction.h>
 #include <sensor_msgs/LaserScan.h>
 #include <math.h>
 #include <cmath>
@@ -17,6 +19,7 @@
 #include <dynamic_reconfigure/Config.h>
 #include <geometry_msgs/PointStamped.h>
 #include <std_srvs/Empty.h>
+#include <boost/thread.hpp>
 
 dynamic_reconfigure::ReconfigureRequest srv_req;
 dynamic_reconfigure::ReconfigureResponse srv_resp;
@@ -35,6 +38,7 @@ double x_goal = 0.0;
 double y_goal = 0.0;
 double yaw = 0.0;
 geometry_msgs::Quaternion goal_quat;
+bool continue_flag = false;
 
 void start_move(const std_msgs::Bool::ConstPtr& activation) //For debugging, start the task by sending a bool
 {
@@ -105,15 +109,19 @@ int main(int argc, char** argv){
   ros::NodeHandle n("~");
   //tell the action client that we want to spin a thread by default
   MoveBaseClient ac("move_base", true);
-  
+  actionlib::SimpleActionClient<my_repository::get_closeAction> ac2("move_close");
   ros::Subscriber act = n.subscribe("get_close", 10, start_move); //Just a topic for starting the action, debugging
   ros::Subscriber get_object_pose = n.subscribe("object_pose", 10, get_object_pose_callback); //Get pose of object
   ros::Subscriber object_goal = n.subscribe("object_goal", 10, object_goal_callback); //Get goal of object
+  //tf::TransformListener listener_; //A listener useful for transformations
   //wait for the action server to come up
   while(!ac.waitForServer(ros::Duration(5.0))){
     ROS_INFO("Waiting for the move_base action server to come up");
   }
-  
+  while(!ac2.waitForServer(ros::Duration(5.0))){
+    ROS_INFO("Waiting for the move_close action server to come up");
+  }
+  //listener_.waitForTransform("base_link", "map", ros::Time(0), ros::Duration(1.0));
   ros::Rate r(10.0);
   
   
@@ -138,26 +146,66 @@ int main(int argc, char** argv){
     ROS_INFO(" GOT x %f", x);
     ros::param::param<double>("/move_base/global_costmap/simple_layer_sub/object_y", y, 0.0);
     ROS_INFO(" GOT y %f", y);
-  move_base_msgs::MoveBaseGoal goal;
+
+    //we will record transforms here
+       //tf::StampedTransform base_transform;
+       
+       //record the starting transform from the odometry to the base frame
+       //listener_.lookupTransform("base_link", "map", 
+                                 //ros::Time(0), base_transform);
+  //double robx, roby; 
+  //robx = base_transform.getOrigin().getX();
+  //roby = base_transform.getOrigin().getY();
+     
+  th = atan2(y-y_goal, x-x_goal);
   
+  move_base_msgs::MoveBaseGoal goal;
+  my_repository::get_closeGoal goal2;
+  goal2.distance = 0.13;
   //we'll send a goal to the robot to move 1 meter forward
   goal.target_pose.header.frame_id = "map";  //The frame of the goal
   goal.target_pose.header.stamp = ros::Time::now();
   
-  goal.target_pose.pose.position.x = x;
-  goal.target_pose.pose.position.y = y;
+  goal.target_pose.pose.position.x = x - 0.6*cos(th);
+  goal.target_pose.pose.position.y = y - 0.6*sin(th);
+  
   geometry_msgs::Quaternion quat = tf::createQuaternionMsgFromYaw(th);
   goal.target_pose.pose.orientation = quat;
 
   ROS_INFO("Sending behind object");
   ac.sendGoal(goal);
 
-  ac.waitForResult();
+  ac.waitForResult(ros::Duration(100.0));
 
-  if(ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+  if(ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED){
     ROS_INFO("Move behind object");
-  else
+    continue_flag = true;
+    }
+  else{
     ROS_INFO("Could not get behind object");
+    continue_flag = false;
+  }
+  if(continue_flag){
+  //Now to approach the object
+    ac2.sendGoal(goal2);
+    //wait for the action to return
+    bool finished_before_timeout = ac.waitForResult(ros::Duration(30.0));
+
+     if (finished_before_timeout)
+    {
+      actionlib::SimpleClientGoalState state = ac.getState();
+      ROS_INFO("Action finished: %s",state.toString().c_str());
+      continue_flag = true;
+     }
+    else
+     {
+      ROS_INFO("Object was not there.");
+      continue_flag = false;
+     }
+   }
+   else{}
+
+
 
   return 0;
 }

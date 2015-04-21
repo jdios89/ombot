@@ -160,6 +160,7 @@ add_executable(fake_laserr src/fake_laserscan.cpp)
 add_executable(get_closse src/close_to_object.cpp)
 add_executable(close_action_server src/getclose_action/close_action.cpp)
 add_executable(test_action src/test_action.cpp)
+add_executable(odometry_test src/odometry_test.cpp)
 #add_executable(push_object src/push_object.cpp)
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
@@ -172,7 +173,9 @@ add_executable(test_action src/test_action.cpp)
 add_dependencies(simple_layer_sub 
    ${PROJECT_NAME}_gencfg
   )
-
+target_link_libraries(odometry_test
+   ${catkin_LIBRARIES}
+  )
 target_link_libraries(test_action
    ${catkin_LIBRARIES}
   )
