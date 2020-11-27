@@ -2,6 +2,8 @@
 
 Here is the Ombot [Omnidirectional mobile robot] source code. It is also included libraries and code for the Arduino DUE, that acts as the base controller. 
 
+![Screenshot](ombot.png)
+
 Later it will be included the electronics schematics and 3d printed supports. 
 
 ### What is this repository for? ###
@@ -69,13 +71,3 @@ WIll initiate RVIZ to visualize the robot in the map and to send visual navigati
 * How to run tests
 * Deployment instructions
 
-### Contribution guidelines ###
-
-* Writing tests
-* Code review
-* Other guidelines
-
-### Who do I talk to? ###
-
-* Repo owner or admin
-* Other community or team contact
