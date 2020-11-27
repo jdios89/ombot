@@ -2,7 +2,7 @@
 
 Here is the Ombot [Omnidirectional mobile robot] source code. It is also included libraries and code for the Arduino DUE, that acts as the base controller. 
 
-![Screenshot](ombot.png)
+![Screenshot](Ombot.png)
 
 Later it will be included the electronics schematics and 3d printed supports. 
 
